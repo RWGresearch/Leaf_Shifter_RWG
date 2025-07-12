@@ -1,9 +1,10 @@
 /*
  * i did and no not plan on spel checking this code... :) your welcome... 
- * This code is to add paddle shifters from a mini cooper rewired through the clock spring using 2 pins for analog input to control a shifter on a Nissan Leaf all years up to 2025.
- * this code was build on 7-11-2025, for more info on this setup see this video: 
- * this code is to be shared and enjoyed by all, feel free to change and use it as you see fit. 
- * RWG 7-11-2025 V1.2
+ * This code is to add paddle shifter from a mini cooper rewired through the clock spring using 2 pins for analog input to control a shifter on a Nissan Leaf all years up to 2025.
+ * this code was build on 7-11-2025, for more info on this setup see this video: https://www.youtube.com/watch?v=SDfXS1Kpxbs
+ * this code is to be shared and enjoyed by all, feel free to change and use it as you see fit. if you do somthing cool though... do tell... 
+ * RWG 7-11-2025 
+ * V1.2
  */
 
 #include "Arduino.h"
@@ -15,7 +16,6 @@ TwoWire I2Ctwo = TwoWire(0);
 // Set i2c address for GPIO explanders.
 PCF8574 pcf8574_1(&I2Ctwo, 0x20); // expander 1 - A0 = low  ,A1 = low ,A2 = low 
 PCF8574 pcf8574_2(&I2Ctwo, 0x21); // expander 2 - A0 = high ,A1 = low ,A2 = low
-
 
 // set up: 
 void setup()
@@ -32,7 +32,6 @@ void setup()
   // Disable Bluetooth to save power
   btStop();
   //Serial.println("Bluetooth and Wi-Fi disabled.");
-
 
   // Set pinMode to OUTPUT / input for bank 1. NOTE im using External Pull Up's you can enable internal pull up's.
   pcf8574_1.pinMode(P0, INPUT);
@@ -76,7 +75,6 @@ void setup()
 void loop() 
 {
 
-
   // read the analog value for pin 0 for paddel shifters:
   int analogValue = analogRead(0);
 
@@ -118,7 +116,7 @@ void loop()
       //delay(100);
       }
 
-      // if we detect we need to set "Reverse" VIA shifter OR paddel shifter (pull both paddels at the same time)
+      // if we detect we need to set "Reverse" VIA shifter OR paddle shifter (pull both paddels at the same time)
       else if (di_1.p0 == 0 && di_2.p0 == 0 && di_1.p1 == 1 && di_2.p1 == 1 && di_1.p2 == 1 && di_2.p2 == 1 && di_2.p3 == 1 && di_1.p3 == 0 || (analogValue >= 2300 && analogValue <= 2390)) { 
         Serial.println("Reverse"); // debug
         pcf8574_1.digitalWrite(P4, LOW);
@@ -132,7 +130,7 @@ void loop()
         //delay(100);
       }
 
-      // if we detect we need to set "D / B" VIA shifter OR paddel shifter (pull ither the left or right paddel) the car will auto change from D OR B Modes.
+      // if we detect we need to set "D / B" VIA shifter OR paddle shifter (pull ither the left or right paddel) the car will auto change from D OR B Modes.
       else if (di_1.p0 == 1 && di_2.p0 == 1 && di_1.p1 == 1 && di_2.p1 == 0 && di_1.p2 == 0 && di_2.p2 == 1 && di_2.p3 == 1 && di_1.p3 == 0 || ((analogValue >= 3190 && analogValue <= 3230) || (analogValue >= 2980 && analogValue <= 3020))) {
         Serial.println("D/B"); // debug
         pcf8574_1.digitalWrite(P4, HIGH);
@@ -145,8 +143,7 @@ void loop()
         pcf8574_1.digitalWrite(P7, LOW);
       }
     
-
-      // If the system is @ rest and no commands are set up to change the shifter, send the fallowing: VIA shifter OR paddel shifter (no paddel triggerd and no input from shifter "home pos")
+      // If the system is @ rest and no commands are set up to change the shifter, send the fallowing: VIA shifter OR paddle shifter (no paddel triggerd and no input from shifter "home pos")
       else if (di_1.p0 == 1 && di_2.p0 == 1 && di_1.p1 == 0 && di_2.p1 == 1 && di_1.p2 == 1 && di_2.p2 == 0 && di_2.p3 == 1 && di_1.p3 == 0 && analogValue >= 4000); {
         delay(100); // delay here or will not trigger change from other shift triggers...
         Serial.println("home"); // debug
@@ -160,7 +157,7 @@ void loop()
         pcf8574_1.digitalWrite(P7, LOW);
       }
 
-      // if we detect we need to set "Netrual" VIA shifter OR paddel shifter (push ither the right OR left paddel)
+      // if we detect we need to set "Netrual" VIA shifter OR paddle shifter (push ither the right OR left paddel)
     if (di_1.p0 == 1 && di_2.p0 == 0 && di_1.p1 == 0 && di_2.p1 == 0 && di_1.p2 == 1 && di_2.p2 == 1 && di_2.p3 == 1 && di_1.p3 == 0 || ((analogValue >= 2000 && analogValue <= 2045) || (analogValue >= 1390 && analogValue <= 1430))) {
 
       Serial.println("Netrual"); // debug
