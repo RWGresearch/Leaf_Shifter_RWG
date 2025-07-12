@@ -1,6 +1,8 @@
 # Leaf_Shifter_RWG
 This code is to add paddle shifters from a R56 mini cooper rewired through the clock spring using 2 pins for analog input to control the shifter on a Nissan Leaf all years up to 2025?
 
+I really wanted my cup holder for my oversized water bottle. That means deleting my shifter... add paddle shifters instead... 
+
 See video here for all the other missing details: https://www.youtube.com/watch?v=SDfXS1Kpxbs
 
 If you want to know the hardware, I used:
