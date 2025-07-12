@@ -15,6 +15,8 @@ GPIO extender: PCF8574 https://www.nxp.com/docs/en/data-sheet/PCF8574_PCF8574A.p
 
 that's it... Basic stuff... because i can... 
 
+<img width="1112" height="580" alt="Paddel Shifter" src="https://github.com/user-attachments/assets/5e5cc223-b8b1-449e-8cd4-bf090400883e" />
+
 Let me know what you think! 
 
 ~Russ Gries 
