@@ -168,7 +168,7 @@ void loop()
       // check again to reduse false inputs for park
       // read the analog value for pin 0 for paddel shifters:
       int analogValue = analogRead(0);
-      Serial.println("Netrual chech again"); // debug
+      Serial.println("Netrual Check Again"); // debug
       if (di_1.p0 == 1 && di_2.p0 == 0 && di_1.p1 == 0 && di_2.p1 == 0 && di_1.p2 == 1 && di_2.p2 == 1 && di_2.p3 == 1 && di_1.p3 == 0 || ((analogValue >= 2000 && analogValue <= 2045) || (analogValue >= 1390 && analogValue <= 1430))) {
     
         Serial.println("Netrual"); // debug
