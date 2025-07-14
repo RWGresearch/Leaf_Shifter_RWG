@@ -159,18 +159,29 @@ void loop()
 
       // if we detect we need to set "Netrual" VIA shifter OR paddle shifter (push ither the right OR left paddel)
     if (di_1.p0 == 1 && di_2.p0 == 0 && di_1.p1 == 0 && di_2.p1 == 0 && di_1.p2 == 1 && di_2.p2 == 1 && di_2.p3 == 1 && di_1.p3 == 0 || ((analogValue >= 2000 && analogValue <= 2045) || (analogValue >= 1390 && analogValue <= 1430))) {
-
-      Serial.println("Netrual"); // debug
-      pcf8574_1.digitalWrite(P4, HIGH);
-      pcf8574_2.digitalWrite(P4, LOW);
-      pcf8574_1.digitalWrite(P5, LOW);
-      pcf8574_2.digitalWrite(P5, LOW);
-      pcf8574_1.digitalWrite(P6, HIGH);
-      pcf8574_2.digitalWrite(P6, HIGH);
-      pcf8574_2.digitalWrite(P7, HIGH);
-      pcf8574_1.digitalWrite(P7, LOW);
-      delay(1000); // delay for 1.1 sec to trigger Netrual in car, its needs 1 second hold before it iwll trigger netrual. the delay in the loop add's an extra .1 sec. 
-      
+      Serial.println("Netrual delay"); // debug
+      delay(150);
+      // Read the Expander #1
+      PCF8574::DigitalInput di_1 = pcf8574_1.digitalReadAll();
+      // Read the Expander #2
+      PCF8574::DigitalInput di_2 = pcf8574_2.digitalReadAll();
+      // check again to reduse false inputs for park
+      // read the analog value for pin 0 for paddel shifters:
+      int analogValue = analogRead(0);
+      Serial.println("Netrual chech again"); // debug
+      if (di_1.p0 == 1 && di_2.p0 == 0 && di_1.p1 == 0 && di_2.p1 == 0 && di_1.p2 == 1 && di_2.p2 == 1 && di_2.p3 == 1 && di_1.p3 == 0 || ((analogValue >= 2000 && analogValue <= 2045) || (analogValue >= 1390 && analogValue <= 1430))) {
+    
+        Serial.println("Netrual"); // debug
+        pcf8574_1.digitalWrite(P4, HIGH);
+        pcf8574_2.digitalWrite(P4, LOW);
+        pcf8574_1.digitalWrite(P5, LOW);
+        pcf8574_2.digitalWrite(P5, LOW);
+        pcf8574_1.digitalWrite(P6, HIGH);
+        pcf8574_2.digitalWrite(P6, HIGH);
+        pcf8574_2.digitalWrite(P7, HIGH);
+        pcf8574_1.digitalWrite(P7, LOW);
+        delay(1000); // delay for 1.1 sec to trigger Netrual in car, its needs 1 second hold before it iwll trigger netrual. the delay in the loop add's an extra .1 sec. 
+      }
 
       }
 
