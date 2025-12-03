@@ -2,12 +2,12 @@
 #define CONFIG_H
 
 //=============================================================================
-// LEAF PADDLE SHIFTER CONFIGURATION - VERSION 2.3.3 
-// RWGresearch.com 
-// Built with love for god's glory. 
+// LEAF PADDLE SHIFTER CONFIGURATION - VERSION 2.4.0
+// RWGresearch.com
+// Built with love for god's glory.
 // ~Russ Gries
 //
-// REVISION: 2.3.3
+// REVISION: 2.4.0
 //
 // This file contains ALL user-configurable settings.
 // Edit values here to customize thresholds, timing, and behavior.
@@ -33,7 +33,14 @@
 // ADC CONFIGURATION
 //-----------------------------------------------------------------------------
 
-#define ADC_CHANNEL_PADDLE  0   // Paddle input on MCP3202 Channel 0
+// INPUT MODE SELECTION
+// Set to true for dual-input mode (separate left/right paddle inputs)
+// Set to false for matrix mode (single resistor matrix input for push and pull paddle input)
+#define USE_DUAL_INPUT_MODE false  // Change to true to use dual-input paddle mode
+
+#define ADC_CHANNEL_PADDLE  0   // Paddle input on MCP3202 Channel 0 (matrix mode)
+#define ADC_CHANNEL_LEFT    0   // Left paddle on Channel 0 (dual-input mode)
+#define ADC_CHANNEL_RIGHT   1   // Right paddle on Channel 1 (dual-input mode)
 #define ADC_VREF           5.0  // ADC reference voltage (5V)
 #define ADC_MAX_VALUE      4095 // 12-bit ADC maximum value
 
@@ -86,6 +93,21 @@ const PaddleThreshold PADDLE_THRESHOLDS[] = {
 };
 
 const int NUM_THRESHOLDS = sizeof(PADDLE_THRESHOLDS) / sizeof(PaddleThreshold);
+
+//-----------------------------------------------------------------------------
+// DUAL-INPUT MODE THRESHOLDS
+//-----------------------------------------------------------------------------
+// For dual-input mode: Each paddle has its own ADC channel
+// ~5V (ADC ~4095) = Home/neutral/not active
+// ~0V (ADC ~0)    = Pulled/active/triggered
+//
+// Threshold for detecting when a paddle is pulled (active)
+// ADC value BELOW this threshold = paddle is pulled
+// ADC value ABOVE this threshold = paddle is at home
+#define DUAL_INPUT_THRESHOLD    2048    // Midpoint - adjust if needed (50% of 4095)
+
+// Timing for NEUTRAL: Left paddle held alone > NEUTRAL_HOLD_TIME_DUAL
+#define NEUTRAL_HOLD_TIME_DUAL  500     // Hold time for NEUTRAL (500ms)
 
 //-----------------------------------------------------------------------------
 // GPIO OUTPUT PATTERNS (sent to TCA9534 at address 0x39)

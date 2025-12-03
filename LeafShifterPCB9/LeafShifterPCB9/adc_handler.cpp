@@ -67,3 +67,29 @@ float readADCVoltage(uint8_t channel) {
     // Formula: voltage = (adc_value / 4095) * reference_voltage
     return (raw / (float)ADC_MAX_VALUE) * ADC_VREF;
 }
+
+/**
+ * Read both paddle inputs for dual-input mode
+ *
+ * In dual-input mode:
+ * - Each paddle is connected to its own ADC channel
+ * - ~5V (ADC ~4095) = Home/neutral/not active
+ * - ~0V (ADC ~0)    = Pulled/active/triggered
+ *
+ * @return DualPaddleInput structure with both paddle states
+ */
+DualPaddleInput readDualPaddleInputs() {
+    DualPaddleInput inputs;
+
+    // Read both ADC channels
+    inputs.left_adc = readADCRaw(ADC_CHANNEL_LEFT);
+    inputs.right_adc = readADCRaw(ADC_CHANNEL_RIGHT);
+
+    // Determine if paddles are pulled (active)
+    // Pulled = ADC value BELOW threshold (closer to 0V)
+    // Home = ADC value ABOVE threshold (closer to 5V)
+    inputs.left_pulled = (inputs.left_adc < DUAL_INPUT_THRESHOLD);
+    inputs.right_pulled = (inputs.right_adc < DUAL_INPUT_THRESHOLD);
+
+    return inputs;
+}

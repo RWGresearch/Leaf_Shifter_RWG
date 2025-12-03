@@ -1,10 +1,10 @@
 /*
  * LeafShifterPCB9* - Simplified Paddle Shifter Controller for Nissan Leaf
  *
- * REVISION: 2.3.3 - PARK IMMEDIATE OVERRIDE
+ * REVISION: 2.4.0 - DUAL-INPUT MODE SUPPORT
  *
  * Simple logic:
- * 1. Read ADC paddle position
+ * 1. Read ADC paddle position (matrix mode OR dual-input mode)
  * 2. Match to gear (PARK, REVERSE, DRIVE, NEUTRAL, HOME)
  * 3. PARK SPECIAL: Both paddles pressed → immediate processing (bypasses debounce & lockout)
  * 4. DEBOUNCE: Wait 50ms for stable reading (prevents false triggers during transition)
@@ -15,15 +15,21 @@
  * 9. WEB SERVER: WiFi AP "Leaf-Shifter" provides real-time debug at http://192.168.4.1 (only use when on USB power)
  * 10. SAFETY: GPIO initialized immediately after Serial (~30ms) for hardware protection
  *
+ * Input Modes (selectable via USE_DUAL_INPUT_MODE flag in config.h):
+ * - MATRIX MODE (default): Single resistor matrix input on ADC channel 0
+ * - DUAL-INPUT MODE: Separate left/right paddle inputs on ADC channels 0 & 1
+ *   - ~5V (ADC ~4095) = Home/neutral/not active
+ *   - ~0V (ADC ~0)    = Pulled/active/triggered
+ *
  * Hardware:
  * - ESP32-C3 Super Mini
  * - MCP3202T ADC (SPI)
  * - TCA9534 GPIO Expander at 0x39 (I2C, outputs only)
  *
- * Author: ~Russ Gries ~ RWGresearch.com 
- * Built with love for god's glory. 
- * Simplified from Leaf_control V7.12 for gear shifter only. 
- * Date: 12/1/2025
+ * Author: ~Russ Gries ~ RWGresearch.com
+ * Built with love for god's glory.
+ * Simplified from Leaf_control V7.12 for gear shifter only.
+ * Date: 12/3/2025
  */
 
 #include <Arduino.h>
@@ -82,7 +88,14 @@ void setup() {
     // Short delay for serial monitor to connect (reduced from 500ms)
     delay(200);
 
-    Serial.println("\n\nLeafShifterPCB9 v2.3.3 - PARK Immediate Override\n");
+#if USE_DUAL_INPUT_MODE
+    Serial.println("\n\nLeafShifterPCB9 v2.4.0 - Dual-Input Mode\n");
+    Serial.println("Input Mode: DUAL-INPUT (separate left/right paddles)");
+    Serial.printf("Threshold: %d (below = pulled, above = home)\n\n", DUAL_INPUT_THRESHOLD);
+#else
+    Serial.println("\n\nLeafShifterPCB9 v2.4.0 - Matrix Mode\n");
+    Serial.println("Input Mode: MATRIX (single resistor matrix input)\n");
+#endif
 
     // Initialize remaining hardware (non-critical for safety)
     initADC();
@@ -118,6 +131,37 @@ void loop() {
     // 1. Check if GPIO pulse is done (return to HOME)
     checkGPIOPulse();
 
+#if USE_DUAL_INPUT_MODE
+    // DUAL-INPUT MODE: Read both paddle inputs separately
+    // 2. Read both paddle ADC channels
+    DualPaddleInput paddle_inputs = readDualPaddleInputs();
+
+    // 3. Match dual inputs to gear
+    uint8_t requested_gear = matchDualInput(paddle_inputs);
+
+    // 4. Check for NEUTRAL hold timer (REVERSE held > NEUTRAL_HOLD_TIME_DUAL)
+    checkNeutralHold(requested_gear);
+
+    // 5. Check gear debounce (waits for stable reading before processing)
+    //    PARK bypasses debounce and lockout entirely (handled in checkGearDebounce)
+    checkGearDebounce(requested_gear);
+
+    // 6. Check and update gear lockout state
+    checkGearLockout(requested_gear);
+
+    // NOTE: processGear() is called from checkGearDebounce() after debounce confirms stable reading
+    // NOTE: PARK is handled specially in checkGearDebounce() - bypasses both debounce and lockout
+
+    // 7. Handle web server requests (if enabled)
+    if (ENABLE_WEB_SERVER) {
+        handleWebServer();
+    }
+
+    // 8. Debug output (every 500ms or on GPIO change)
+    printDebugDual(paddle_inputs);
+
+#else
+    // MATRIX MODE: Read single resistor matrix input
     // 2. Read paddle ADC
     uint16_t adc = readADCRaw(ADC_CHANNEL_PADDLE);
 
@@ -144,6 +188,7 @@ void loop() {
 
     // 8. Debug output (every 500ms or on GPIO change)
     printDebug(adc);
+#endif
 }
 
 //=============================================================================
@@ -158,6 +203,30 @@ uint8_t matchADC(uint16_t adc) {
         }
     }
     return GEAR_HOME;  // Default to HOME if no match
+}
+
+//=============================================================================
+// DUAL-INPUT MATCHING
+//=============================================================================
+
+uint8_t matchDualInput(DualPaddleInput inputs) {
+    // Both paddles pulled → PARK
+    if (inputs.left_pulled && inputs.right_pulled) {
+        return GEAR_PARK;
+    }
+
+    // Left paddle pulled only → REVERSE (can upgrade to NEUTRAL with hold timer)
+    if (inputs.left_pulled && !inputs.right_pulled) {
+        return GEAR_REVERSE;
+    }
+
+    // Right paddle pulled only → DRIVE/BRAKE
+    if (!inputs.left_pulled && inputs.right_pulled) {
+        return GEAR_DRIVE;
+    }
+
+    // Neither paddle pulled → HOME
+    return GEAR_HOME;
 }
 
 //=============================================================================
@@ -500,4 +569,81 @@ void printDebug(uint16_t adc) {
                  (millis() / 1000) % 60);
 
     Serial.println("===========================\n");
+}
+
+void printDebugDual(DualPaddleInput inputs) {
+    if (!ENABLE_DEBUG_OUTPUT) return;
+
+    uint8_t current_gpio = getCurrentGPIOOutput();
+    bool gpio_changed = (current_gpio != last_gpio);
+    bool time_elapsed = (millis() - last_debug >= DEBUG_INTERVAL_MS);
+
+    if (!gpio_changed && !time_elapsed) return;
+
+    last_debug = millis();
+    last_gpio = current_gpio;
+
+    // Header
+    Serial.println("=== Paddle Shifter v2.4.0 (DUAL-INPUT MODE) ===");
+
+    // Dual paddle ADC info
+    float left_voltage = (inputs.left_adc / 4095.0) * 5.0;
+    float right_voltage = (inputs.right_adc / 4095.0) * 5.0;
+
+    Serial.printf("Left Paddle:  ADC=%4d (%.2fV) %s\n",
+                  inputs.left_adc, left_voltage,
+                  inputs.left_pulled ? "[PULLED]" : "[HOME]");
+    Serial.printf("Right Paddle: ADC=%4d (%.2fV) %s\n",
+                  inputs.right_adc, right_voltage,
+                  inputs.right_pulled ? "[PULLED]" : "[HOME]");
+
+    // Paddle combination description
+    if (inputs.left_pulled && inputs.right_pulled) {
+        Serial.println("Input: Both Paddles → PARK");
+    } else if (inputs.left_pulled && !inputs.right_pulled) {
+        Serial.println("Input: Left Paddle → REVERSE (hold for NEUTRAL)");
+    } else if (!inputs.left_pulled && inputs.right_pulled) {
+        Serial.println("Input: Right Paddle → DRIVE/BRAKE");
+    } else {
+        Serial.println("Input: None → HOME");
+    }
+
+    // Current state
+    const char* gear_name = getGearName(state.current_gear, state.drive_brake_mode);
+    Serial.printf("Gear: %s | GPIO: 0x%02X", gear_name, current_gpio);
+
+    if (state.gpio_pulsing) {
+        unsigned long elapsed = millis() - state.gpio_start;
+        unsigned long total = getGPIOHoldTime(state.gpio_gear);
+        Serial.printf(" (pulse %lu/%lums)", elapsed, total);
+    } else {
+        Serial.print(" (idle)");
+    }
+    Serial.println();
+
+    // NEUTRAL hold timer
+    if (state.neutral_timing && !state.neutral_triggered) {
+        unsigned long elapsed = millis() - state.neutral_start;
+        Serial.printf("NEUTRAL timer: %lu/%d ms\n", elapsed, NEUTRAL_HOLD_TIME_DUAL);
+    }
+
+    // Gear lockout status
+    if (ENABLE_GEAR_LOCKOUT && state.gear_locked) {
+        if (state.waiting_for_home) {
+            if (state.home_detected_time > 0) {
+                unsigned long elapsed = millis() - state.home_detected_time;
+                Serial.printf("Lockout: HOME delay %lu/%d ms\n", elapsed, GEAR_LOCKOUT_DELAY_MS);
+            } else {
+                Serial.println("Lockout: Waiting for HOME position");
+            }
+        }
+    }
+
+    // Uptime
+    Serial.printf("Uptime: %02lu:%02lu:%02lu\n",
+                 (millis() / 3600000) % 24,
+                 (millis() / 60000) % 60,
+                 (millis() / 1000) % 60);
+
+    Serial.println("============================================\n");
 }
