@@ -2,12 +2,12 @@
 #define CONFIG_H
 
 //=============================================================================
-// LEAF PADDLE SHIFTER CONFIGURATION - VERSION 2.4.0
+// LEAF PADDLE SHIFTER CONFIGURATION - VERSION 2.5.0
 // RWGresearch.com
 // Built with love for god's glory.
 // ~Russ Gries
 //
-// REVISION: 2.4.0
+// REVISION: 2.5.0
 //
 // This file contains ALL user-configurable settings.
 // Edit values here to customize thresholds, timing, and behavior.

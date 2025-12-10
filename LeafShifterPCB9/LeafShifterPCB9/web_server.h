@@ -7,7 +7,7 @@
 // WEB SERVER FOR REAL-TIME DEBUG DISPLAY
 //=============================================================================
 // Provides WiFi AP and web interface for debugging paddle shifter
-// - Creates WiFi AP "Leaf-Shifter" with password "0123456789"
+// - Creates WiFi AP "Leaf-Shifter" with password "LeafControl"
 // - Serves HTML page at http://192.168.4.1
 // - Provides JSON API at /data for real-time updates
 // - Displays ADC values, gear state, lockout status, thresholds, etc.

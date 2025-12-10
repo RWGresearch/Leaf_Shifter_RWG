@@ -1,7 +1,7 @@
 /*
  * LeafShifterPCB9* - Simplified Paddle Shifter Controller for Nissan Leaf
  *
- * REVISION: 2.4.0 - DUAL-INPUT MODE SUPPORT
+ * REVISION: 2.5.0 - MOBILE-OPTIMIZED WEB INTERFACE WITH THEMES
  *
  * Simple logic:
  * 1. Read ADC paddle position (matrix mode OR dual-input mode)
@@ -25,6 +25,7 @@
  * - ESP32-C3 Super Mini
  * - MCP3202T ADC (SPI)
  * - TCA9534 GPIO Expander at 0x39 (I2C, outputs only)
+ * - Note that on PCB9, Jumper all Isolators, there only needed for the full Leaf Control.
  *
  * Author: ~Russ Gries ~ RWGresearch.com
  * Built with love for god's glory.
@@ -89,11 +90,11 @@ void setup() {
     delay(200);
 
 #if USE_DUAL_INPUT_MODE
-    Serial.println("\n\nLeafShifterPCB9 v2.4.0 - Dual-Input Mode\n");
+    Serial.println("\n\nLeafShifterPCB9 v2.5.0 - Dual-Input Mode\n");
     Serial.println("Input Mode: DUAL-INPUT (separate left/right paddles)");
     Serial.printf("Threshold: %d (below = pulled, above = home)\n\n", DUAL_INPUT_THRESHOLD);
 #else
-    Serial.println("\n\nLeafShifterPCB9 v2.4.0 - Matrix Mode\n");
+    Serial.println("\n\nLeafShifterPCB9 v2.5.0 - Matrix Mode\n");
     Serial.println("Input Mode: MATRIX (single resistor matrix input)\n");
 #endif
 
@@ -499,7 +500,7 @@ void printDebug(uint16_t adc) {
     last_gpio = current_gpio;
 
     // Header
-    Serial.println("=== Paddle Shifter v2.3.3 ===");
+    Serial.println("=== Paddle Shifter v2.5.0 ===");
 
     // ADC info
     float voltage = (adc / 4095.0) * 5.0;
@@ -584,7 +585,7 @@ void printDebugDual(DualPaddleInput inputs) {
     last_gpio = current_gpio;
 
     // Header
-    Serial.println("=== Paddle Shifter v2.4.0 (DUAL-INPUT MODE) ===");
+    Serial.println("=== Paddle Shifter v2.5.0 (DUAL-INPUT MODE) ===");
 
     // Dual paddle ADC info
     float left_voltage = (inputs.left_adc / 4095.0) * 5.0;
