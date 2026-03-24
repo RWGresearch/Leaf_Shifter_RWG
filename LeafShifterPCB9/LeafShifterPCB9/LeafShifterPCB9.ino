@@ -1,7 +1,7 @@
 /*
  * LeafShifterPCB9* - Simplified Paddle Shifter Controller for Nissan Leaf
  *
- * REVISION: 2.5.0 - MOBILE-OPTIMIZED WEB INTERFACE WITH THEMES
+ * REVISION: 2.5.1 - FIX NEUTRAL LOCKOUT BUG (NEUTRAL now bypasses gear lockout like PARK)
  *
  * Simple logic:
  * 1. Read ADC paddle position (matrix mode OR dual-input mode)
@@ -417,8 +417,8 @@ void processGear(uint8_t gear) {
     // Ignore if already triggered NEUTRAL during this hold
     if (state.neutral_triggered && gear == GEAR_REVERSE) return;
 
-    // PARK overrides lockout (both paddles = clear intent)
-    bool bypass_lockout = (gear == GEAR_PARK);
+    // PARK and NEUTRAL override lockout (both are intentional hold actions triggered while paddle is still pressed)
+    bool bypass_lockout = (gear == GEAR_PARK || gear == GEAR_NEUTRAL);
 
     // Check lockout (unless PARK)
     if (!bypass_lockout && state.gear_locked && ENABLE_GEAR_LOCKOUT) {
